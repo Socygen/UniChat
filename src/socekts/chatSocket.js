@@ -37,8 +37,6 @@ module.exports = (io) => {
     socket.on('send_message', (data) => {
       io.to(data.receiverId).emit("send_message", data);
       console.log("Emitted To Receiver", data);
-      io.to(data.senderId).emit("new_chat", data);
-      console.log("Emitted To Sender", data);
       sendNotification(data);
     })
 
