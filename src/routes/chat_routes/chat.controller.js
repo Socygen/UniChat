@@ -66,12 +66,24 @@ const createGroupChat = async (req, res) => {
 
 const myChats = async (req, res) => {
     try {
-        const chats = await ChatModel.find({
-            users: req.query.userId
-        }).populate({
-            path: "users",
-            select: "userName email mobile online lastSeen profileImage"
-        }).sort({ updatedAt: -1 })
+        const userId = req.query.userId;
+        let chats = await ChatModel.find({ users: userId })
+           .populate({
+              path: "users",
+              select: "userName email mobile online lastSeen profileImage"
+           }).sort({ updatedAt: -1 });
+
+            chats = chats.map(chat => {
+            const users = chat.users;
+            const userIndex = users.findIndex(user => user._id.toString() === userId);
+            if (userIndex !== -1 && userIndex !== 0) {
+                const temp = users[0];
+                users[0] = users[userIndex];
+                users[userIndex] = temp;
+            }
+            return chat;
+         });
+
         res.send({
             data: chats,
             status: true,
@@ -80,6 +92,7 @@ const myChats = async (req, res) => {
         res.status(403).json({ status: false, error: error })
     }
 }
+
 
 const chatById = async (req, res) => {
     const chatId = req.query.chatId
