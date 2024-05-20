@@ -125,48 +125,53 @@ const fetchExpoTokens = async (req, res) => {
 
 const checkContacts = async (req, res) => {
   try {
-    let contacts = [];
-    
+    let jsonData = '';
+
     req.on('data', chunk => {
-      contacts.push(chunk);
+      jsonData += chunk.toString();
+
+      if (jsonData.length > 1e6) {
+        req.destroy();
+        res.status(413).json({ status: false, error: "Request entity too large" });
+      }
     });
 
     req.on('end', async () => {
       try {
-        contacts = JSON.parse(Buffer.concat(contacts).toString());
+        const parsedData = JSON.parse(jsonData);
 
-        if (!contacts || !Array.isArray(contacts)) {
+        if (!parsedData || !Array.isArray(parsedData)) {
           return res.status(400).json({ status: false, error: "Invalid contacts format" });
         }
 
-        const phoneNumbers = contacts
+        const phoneNumbers = parsedData
           .flatMap(contact => contact.phoneNumbers)
           .map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, ''));
 
         const existingUsers = await UserModel.find({ mobile: { $in: phoneNumbers } });
-        const existingNumbers = existingUsers.map(user => user.mobile.replace(/\D/g, ''));
+        const existingNumbers = new Set(existingUsers.map(user => user.mobile.replace(/\D/g, '')));
 
-        const result = contacts.map(contact => {
+        const result = parsedData.map(contact => {
           const isExists = contact.phoneNumbers.some(phone =>
-            existingNumbers.includes(phone.number.replace(/\D/g, ''))
+            existingNumbers.has(phone.number.replace(/\D/g, ''))
           );
+
+          const existingUser = existingUsers.find(user =>
+            contact.phoneNumbers.some(phone =>
+              user.mobile.replace(/\D/g, '') === phone.number.replace(/\D/g, '')
+            )
+          );
+
           return {
             displayName: contact.displayName,
             phoneNumber: contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, '').replace(/^\+?91/, '').replace(/^91/, '')), // Standardize format
-            isExists
-          };
-        });
-
-        const combinedData = result.map(contact => {
-          const existingUser = existingUsers.find(user => user.mobile.replace(/\D/g, '') === contact.phoneNumber);
-          return {
-            ...contact,
+            isExists,
             existingUser: existingUser || null
           };
         });
 
         res.send({
-          data: combinedData,
+          data: result,
           status: true
         });
       } catch (error) {
