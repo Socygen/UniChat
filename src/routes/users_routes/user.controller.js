@@ -142,16 +142,23 @@ const checkContacts = async (req, res) => {
       const isExists = contact.phoneNumbers.some(phone =>
         existingNumbers.includes(phone.number.replace(/\D/g, ''))
       );
+
+      const existingUser = existingUsers.find(user =>
+        contact.phoneNumbers.some(phone =>
+          user.mobile.replace(/\D/g, '') === phone.number.replace(/\D/g, '')
+        )
+      );
+
       return {
         displayName: contact.displayName,
         phoneNumber: contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, '').replace(/^\+?91/, '').replace(/^91/, '')), // Standardize format
-        isExists
+        isExists,
+        existingUser: existingUser || null
       };
     });
 
     res.send({
       data: result,
-      existingUsers,
       status: true
     });
   } catch (error) {
