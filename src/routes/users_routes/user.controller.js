@@ -153,5 +153,6 @@ module.exports = {
     loginUser,
     fetchAllUsers,
     fetchUsersByIds,
-    fetchExpoTokens
+    fetchExpoTokens,
+    checkContacts
 }
