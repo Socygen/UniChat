@@ -133,7 +133,7 @@ const checkContacts = async (req, res) => {
 
     const phoneNumbers = contacts
       .flatMap(contact => contact.phoneNumbers)
-      .map(phone => phone.number.replace(/\D/g, ''));
+      .map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, ''));
 
     const existingUsers = await UserModel.find({ mobile: { $in: phoneNumbers } });
     const existingNumbers = existingUsers.map(user => user.mobile.replace(/\D/g, ''));
@@ -144,7 +144,7 @@ const checkContacts = async (req, res) => {
       );
       return {
         displayName: contact.displayName,
-        phoneNumber: contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, '')),
+        phoneNumber: contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, '').replace(/^\+?91/, '').replace(/^91/, '')), // Standardize format
         isExists
       };
     });
@@ -158,7 +158,6 @@ const checkContacts = async (req, res) => {
     res.status(500).json({ status: false, error: error.message });
   }
 };
-
 
 
 module.exports = {
