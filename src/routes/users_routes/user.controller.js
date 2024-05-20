@@ -124,18 +124,21 @@ const fetchExpoTokens = async (req, res) => {
 
 const checkContacts = async (req, res) => {
     try {
-      const { phoneNumbers } = req.body;
-      
-      if (!phoneNumbers || !Array.isArray(phoneNumbers)) {
-        return res.status(400).json({ status: false, error: "Invalid phone numbers format" });
+      const { contacts } = req.body;
+  
+      if (!contacts || !Array.isArray(contacts)) {
+        return res.status(400).json({ status: false, error: "Invalid contacts format" });
       }
-      
+  
+      const phoneNumbers = contacts.map(contact => contact.phoneNumber);
+
       const existingUsers = await UserModel.find({ mobile: { $in: phoneNumbers } });
       const existingNumbers = existingUsers.map(user => user.mobile);
   
-      const result = phoneNumbers.map(number => ({
-        number,
-        exists: existingNumbers.includes(number)
+      const result = contacts.map(contact => ({
+        name: contact.name,
+        phoneNumber: contact.phoneNumber,
+        isExists: existingNumbers.includes(contact.phoneNumber)
       }));
   
       res.send({
@@ -143,11 +146,9 @@ const checkContacts = async (req, res) => {
         status: true
       });
     } catch (error) {
-      res.status(403).json({ status: false, error: error.message });
+      res.status(500).json({ status: false, error: error.message });
     }
-  };
-  
-
+}; 
 module.exports = {
     createUser,
     loginUser,
