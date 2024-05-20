@@ -125,40 +125,59 @@ const fetchExpoTokens = async (req, res) => {
 
 const checkContacts = async (req, res) => {
   try {
-    const contacts = req.body;
-
-    if (!contacts || !Array.isArray(contacts)) {
-      return res.status(400).json({ status: false, error: "Invalid contacts format" });
-    }
-
-    const phoneNumbers = contacts
-      .flatMap(contact => contact.phoneNumbers)
-      .map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, ''));
-
-    const existingUsers = await UserModel.find({ mobile: { $in: phoneNumbers } });
-    const existingNumbers = existingUsers.map(user => user.mobile.replace(/\D/g, ''));
-
-    const result = contacts.map(contact => {
-      const isExists = contact.phoneNumbers.some(phone =>
-        existingNumbers.includes(phone.number.replace(/\D/g, ''))
-      );
-      return {
-        displayName: contact.displayName,
-        phoneNumber: contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, '').replace(/^\+?91/, '').replace(/^91/, '')), // Standardize format
-        isExists
-      };
+    let contacts = [];
+    
+    req.on('data', chunk => {
+      contacts.push(chunk);
     });
 
-    res.send({
-      data: result,
-      existingUsers,
-      status: true
+    req.on('end', async () => {
+      try {
+        contacts = JSON.parse(Buffer.concat(contacts).toString());
+
+        if (!contacts || !Array.isArray(contacts)) {
+          return res.status(400).json({ status: false, error: "Invalid contacts format" });
+        }
+
+        const phoneNumbers = contacts
+          .flatMap(contact => contact.phoneNumbers)
+          .map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, ''));
+
+        const existingUsers = await UserModel.find({ mobile: { $in: phoneNumbers } });
+        const existingNumbers = existingUsers.map(user => user.mobile.replace(/\D/g, ''));
+
+        const result = contacts.map(contact => {
+          const isExists = contact.phoneNumbers.some(phone =>
+            existingNumbers.includes(phone.number.replace(/\D/g, ''))
+          );
+          return {
+            displayName: contact.displayName,
+            phoneNumber: contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, '').replace(/^\+?91/, '').replace(/^91/, '')), // Standardize format
+            isExists
+          };
+        });
+
+        const combinedData = result.map(contact => {
+          const existingUser = existingUsers.find(user => user.mobile.replace(/\D/g, '') === contact.phoneNumber);
+          return {
+            ...contact,
+            existingUser: existingUser || null
+          };
+        });
+
+        res.send({
+          data: combinedData,
+          status: true
+        });
+      } catch (error) {
+        res.status(400).json({ status: false, error: "Invalid JSON format" });
+      }
     });
+
   } catch (error) {
     res.status(500).json({ status: false, error: error.message });
   }
 };
-
 
 module.exports = {
     createUser,
