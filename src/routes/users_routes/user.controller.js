@@ -149,6 +149,8 @@ const checkContacts = async (req, res) => {
       res.status(500).json({ status: false, error: error.message });
     }
 }; 
+
+
 module.exports = {
     createUser,
     loginUser,
