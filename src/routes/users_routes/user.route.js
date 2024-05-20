@@ -9,5 +9,6 @@ router.post('/fetchUsersByIds', user_controller.fetchUsersByIds);
 router.get('/fetchUsers', user_controller.fetchAllUsers);
 router.post('/fetchExpotokens', user_controller.fetchExpoTokens);
 router.post('/checkContacts', user_controller.checkContacts);
+router.get('/fetchUserDetails', user_controller.fetchUserDetails);
 
 module.exports = router
