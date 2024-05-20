@@ -8,5 +8,6 @@ router.post('/login', user_controller.loginUser);
 router.post('/fetchUsersByIds', user_controller.fetchUsersByIds);
 router.get('/fetchUsers', user_controller.fetchAllUsers);
 router.post('/fetchExpotokens', user_controller.fetchExpoTokens);
+router.post('/checkContacts', user_controller.checkContacts);
 
 module.exports = router
