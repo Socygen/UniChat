@@ -124,45 +124,51 @@ const fetchExpoTokens = async (req, res) => {
 
 
 const checkContacts = async (req, res) => {
-  try {
-    const contacts = req.body;
-
-    if (!contacts || !Array.isArray(contacts)) {
-      return res.status(400).json({ status: false, error: "Invalid contacts format" });
+    try {
+        const contacts = req.body;
+    
+        if (!contacts || !Array.isArray(contacts)) {
+            return res.status(400).json({ status: false, error: "Invalid contacts format" });
+        }
+    
+        const allPhoneNumbers = contacts.flatMap(contact => contact.phoneNumbers.map(phone => phone.number));
+        const cleanPhoneNumbers = allPhoneNumbers.map(phone => phone.replace(/^\+?91/, '').replace(/^91/, '').replace(/\D/g, ''));
+        const existingUsers = await UserModel.find({ mobile: { $in: cleanPhoneNumbers } });
+        const existingUserMap = existingUsers.reduce((map, user) => {
+            map[user.mobile.replace(/\D/g, '')] = user;
+            return map;
+        }, {});
+    
+        const result = contacts.map(contact => {
+            const contactPhoneNumbers = contact.phoneNumbers.map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, '').replace(/\D/g, ''));
+            const isExists = contactPhoneNumbers.some(phone => existingUserMap.hasOwnProperty(phone));
+            const existingUser = contactPhoneNumbers.map(phone => existingUserMap[phone]).find(user => user);
+    
+            const mergedContact = {
+                displayName: contact.displayName,
+                phoneNumber: contactPhoneNumbers,
+                isExists,
+                ...(existingUser && { 
+                    _id: existingUser._id,
+                    profileImage: existingUser.profileImage,
+                    userName: existingUser.userName,
+                    mobile: existingUser.mobile,
+                    online: existingUser.online,
+                    lastSeen: existingUser.lastSeen
+                })
+            };
+    
+            return mergedContact;
+        });
+    
+        res.send({
+            data: result,
+            status: true
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, error: error.message });
     }
-
-    const phoneNumbers = contacts
-      .flatMap(contact => contact.phoneNumbers)
-      .map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, ''));
-
-    const existingUsers = await UserModel.find({ mobile: { $in: phoneNumbers } });
-    const existingUserMap = existingUsers.reduce((map, user) => {
-      map[user.mobile.replace(/\D/g, '')] = user;
-      return map;
-    }, {});
-
-    const result = contacts.map(contact => {
-      const contactPhoneNumbers = contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, ''));
-      const isExists = contactPhoneNumbers.some(phone => existingUserMap.hasOwnProperty(phone));
-
-      return {
-        displayName: contact.displayName,
-        phoneNumber: contactPhoneNumbers,
-        isExists,
-        existingUser: existingUserMap[contactPhoneNumbers.find(phone => existingUserMap.hasOwnProperty(phone))] || null
-      };
-    });
-
-    res.send({
-      data: result,
-      status: true
-    });
-  } catch (error) {
-    res.status(500).json({ status: false, error: error.message });
-  }
 };
-
-
 module.exports = {
     createUser,
     loginUser,
