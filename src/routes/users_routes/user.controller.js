@@ -136,24 +136,20 @@ const checkContacts = async (req, res) => {
       .map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, ''));
 
     const existingUsers = await UserModel.find({ mobile: { $in: phoneNumbers } });
-    const existingNumbers = existingUsers.map(user => user.mobile.replace(/\D/g, ''));
+    const existingUserMap = existingUsers.reduce((map, user) => {
+      map[user.mobile.replace(/\D/g, '')] = user;
+      return map;
+    }, {});
 
     const result = contacts.map(contact => {
-      const isExists = contact.phoneNumbers.some(phone =>
-        existingNumbers.includes(phone.number.replace(/\D/g, ''))
-      );
-
-      const existingUser = existingUsers.find(user =>
-        contact.phoneNumbers.some(phone =>
-          user.mobile.replace(/\D/g, '') === phone.number.replace(/\D/g, '')
-        )
-      );
+      const contactPhoneNumbers = contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, ''));
+      const isExists = contactPhoneNumbers.some(phone => existingUserMap.hasOwnProperty(phone));
 
       return {
         displayName: contact.displayName,
-        phoneNumber: contact.phoneNumbers.map(phone => phone.number.replace(/\D/g, '').replace(/^\+?91/, '').replace(/^91/, '')), // Standardize format
+        phoneNumber: contactPhoneNumbers,
         isExists,
-        existingUser: existingUser || null
+        existingUser: existingUserMap[contactPhoneNumbers.find(phone => existingUserMap.hasOwnProperty(phone))] || null
       };
     });
 
