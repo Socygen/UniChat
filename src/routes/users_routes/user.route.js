@@ -10,5 +10,6 @@ router.get('/fetchUsers', user_controller.fetchAllUsers);
 router.post('/fetchExpotokens', user_controller.fetchExpoTokens);
 router.post('/checkContacts', user_controller.checkContacts);
 router.get('/fetchUserDetails', user_controller.fetchUserDetails);
+router.post('/updateUser', user_controller.updateUser);
 
 module.exports = router
