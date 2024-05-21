@@ -184,6 +184,43 @@ const checkContacts = async (req, res) => {
         res.status(500).json({ status: false, error: error.message });
     }
 };
+
+const updateUser = async (req, res) => {
+  const { mobile, userName, email, profileImage, fcmToken, password } = req.body;
+
+  try {
+    let user = await UserModel.findOne({ mobile });
+
+    if (!user) {
+      return res.status(404).send({
+        message: 'User not found',
+        status: false
+      });
+    }
+
+    if (userName) user.userName = userName;
+    if (email) user.email = email;
+    if (profileImage) user.profileImage = profileImage;
+    if (fcmToken) user.fcmToken = fcmToken;
+    if (password) {
+      const salt = await bcrypt.genSalt();
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    await user.save();
+
+    return res.status(200).send({
+      data: user,
+      message: 'User updated successfully',
+      status: true
+    });
+  } catch (error) {
+    console.log('Error occurred:', error);
+    return res.status(500).json({ status: false, error: 'Internal Server Error' });
+  }
+};
+
+
 module.exports = {
     createUser,
     loginUser,
@@ -191,5 +228,6 @@ module.exports = {
     fetchUsersByIds,
     fetchExpoTokens,
     checkContacts,
-    fetchUserDetails
+    fetchUserDetails,
+    updateUser
 }
