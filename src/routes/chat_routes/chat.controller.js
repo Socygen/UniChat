@@ -35,7 +35,7 @@ const createPrivateChat = async (req, res) => {
 const createGroupChat = async (req, res) => {
     const { userIds, chatName } = req.body
     let allUsers = userIds
-    allUsers.push(req.user.user_id)
+    allUsers.push(req.query.userId)
     try {
         const chat = await ChatModel.findOne({
             users: { $all: allUsers },
@@ -53,7 +53,7 @@ const createGroupChat = async (req, res) => {
             users: userIds,
             chatName: chatName,
             type: "group",
-            groupAdmin: req.user.user_id
+            groupAdmin: req.query.userId
         })
         res.send({
             data: newChat,
