@@ -186,18 +186,21 @@ const checkContacts = async (req, res) => {
             }
         });
 
-        // Sort existing contacts alphabetically by userName
-        result.existing.sort((a, b) => {
-            if (a.userName && b.userName) {
-                return a.userName.localeCompare(b.userName);
-            } else if (a.userName) {
+        // Sort existing and notExisting contacts alphabetically by displayName
+        const sortByDisplayName = (a, b) => {
+            if (a.displayName && b.displayName) {
+                return a.displayName.localeCompare(b.displayName);
+            } else if (a.displayName) {
                 return -1;
-            } else if (b.userName) {
+            } else if (b.displayName) {
                 return 1;
             } else {
                 return 0;
             }
-        });
+        };
+
+        result.existing.sort(sortByDisplayName);
+        result.notExisting.sort(sortByDisplayName);
 
         res.send({
             data: result,
