@@ -37,7 +37,6 @@ module.exports = (io) => {
     socket.on('send_message', (data) => {
       io.to(data.receiverId).emit("send_message", data);
       console.log("Emitted To Receiver", data);
-      sendNotification(data);
     })
 
     socket.on('user_online', async ({ userId }) => {
@@ -70,7 +69,7 @@ module.exports = (io) => {
           const user = await UserModel.findById(userId)
           if (user) {
             user.online = false,
-              user.lastSeen = new Date();
+            user.lastSeen = new Date();
             await user.save();
             io.emit('user_online', { userId: user._id, online: false, lastSeen: user.lastSeen })
             console.log('user disconnected succesfully...!');
@@ -80,35 +79,4 @@ module.exports = (io) => {
       }
     })
   });
-};
-
-const sendNotification = async (notificationData) => {
-  try {
-    let findUser = await UserModel.findById(notificationData?.receiverId);
-
-    if (!!findUser?.fcmToken) {
-        let formdata = {
-          to: findUser?.fcmToken,
-          title: "New Message",
-          body: notificationData?.text,
-        };
-
-        const raw = JSON.stringify(formdata);
-        var requestOptions = {
-          mode: "no-cors",
-          method: "POST",
-          body: raw,
-          redirect: "follow",
-        };
-
-        fetch("https://exp.host/--/api/v2/push/send", requestOptions)
-          .then((response) => response.text())
-          .then((result) => {
-            console.log("result", JSON.parse(result));
-          })
-          .catch((error) => console.error(error));
-    }
-  } catch (error) {
-    console.error("Error sending notification:", error);
-  }
 };
