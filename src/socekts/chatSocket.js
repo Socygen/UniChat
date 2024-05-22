@@ -1,5 +1,6 @@
 const UserModel = require('../models/user');
 const MessageModel = require('../models/message');
+const ChatModel = require('../models/chat');
 const socktIdToUserId = new Map();
 
 module.exports = (io) => {
@@ -54,6 +55,15 @@ module.exports = (io) => {
             { $set: { read: true, sent: false, receive: false, pending: false } }
           );
 
+          const senderId = userId; 
+          const updateFields = {
+             read: true,
+             sent: false,
+             receive: false,
+             pending: false
+          };
+
+          updateChatsBySenderIdSorted(senderId, updateFields); 
           console.log(`Message status updated for user ${userId}.`);
         }
       } catch (error) {
@@ -80,3 +90,17 @@ module.exports = (io) => {
     })
   });
 };
+
+const updateChatsBySenderIdSorted = async (senderId, updateFields) => {
+  try {
+    const chats = await ChatModel.find({ senderId: senderId }).sort({ updatedAt: -1 }); 
+    const updatePromises = chats.map(chat => 
+      ChatModel.updateOne({ _id: chat._id }, { $set: updateFields })
+    );
+
+    const results = await Promise.all(updatePromises);
+      console.log(`Successfully updated ${results.length} chats`);
+    } catch (error) {
+    console.error('Error updating chats:', error);
+   }
+ }; 
