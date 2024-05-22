@@ -50,7 +50,7 @@ const sendMessage = async (req, res) => {
             });
 
             const chatUpdate = await ChatModel.findByIdAndUpdate(chatId, {
-                latestMessage: text
+              latestMessage: text, senderId : senderId, sent : sent, receive : receive, pending : pending, read : read
             }, {
                 new: true
             });
