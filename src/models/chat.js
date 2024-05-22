@@ -10,8 +10,12 @@ type: {
 },
 users: [{type: ObjectId, required: true, ref: 'User', required: true}],
 latestMessage: {type: {}, ref:"User"},
-groupAdmin: {type: ObjectId, ref: 'User'}
-
+groupAdmin: {type: ObjectId, ref: 'User'},
+senderId : {type: ObjectId, ref: 'User'},
+sent: {type: Boolean, required: false},
+receive: {type: Boolean, required: false},
+pending: {type: Boolean, required: false},
+read: {type: Boolean, required: false}
 },{timestamps: true})
 
 module.exports = mongoose.model("Chat", chatSchema)
