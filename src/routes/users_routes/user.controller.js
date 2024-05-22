@@ -143,27 +143,33 @@ const checkContacts = async (req, res) => {
         const contacts = req.body;
     
         if (!contacts || !Array.isArray(contacts)) {
-            return res.status(400).json({ status: false, error: "Invalid contacts format" });
+            return res.status(400).json({ status: false, error: "Invalid contacts format. Expected an array of contacts." });
         }
     
+        // Flatten and clean phone numbers
         const allPhoneNumbers = contacts.flatMap(contact => contact.phoneNumbers.map(phone => phone.number));
         const cleanPhoneNumbers = allPhoneNumbers.map(phone => phone.replace(/^\+?91/, '').replace(/^91/, '').replace(/\D/g, ''));
+        
+        // Find existing users
         const existingUsers = await UserModel.find({ mobile: { $in: cleanPhoneNumbers } });
-        const existingUserMap = existingUsers.reduce((map, user) => {
-            map[user.mobile.replace(/\D/g, '')] = user;
-            return map;
-        }, {});
+        const existingUserMap = new Map(existingUsers.map(user => [user.mobile.replace(/\D/g, ''), user]));
     
-        const result = contacts.map(contact => {
-            const contactPhoneNumbers = contact.phoneNumbers.map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, '').replace(/\D/g, ''));
-            const isExists = contactPhoneNumbers.some(phone => existingUserMap.hasOwnProperty(phone));
-            const existingUser = contactPhoneNumbers.map(phone => existingUserMap[phone]).find(user => user);
-    
+        // Separate contacts into existing and non-existing
+        const result = {
+            existing: [],
+            notExisting: []
+        };
+
+        contacts.forEach(contact => {
+            const cleanedContactPhoneNumbers = contact.phoneNumbers.map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, '').replace(/\D/g, ''));
+            const existingUser = cleanedContactPhoneNumbers.map(phone => existingUserMap.get(phone)).find(user => user);
+            const isExists = !!existingUser;
+
             const mergedContact = {
                 displayName: contact.displayName,
-                phoneNumber: contactPhoneNumbers,
+                phoneNumber: cleanedContactPhoneNumbers,
                 isExists,
-                ...(existingUser && { 
+                ...(isExists && {
                     _id: existingUser._id,
                     profileImage: existingUser.profileImage,
                     userName: existingUser.userName,
@@ -172,18 +178,37 @@ const checkContacts = async (req, res) => {
                     lastSeen: existingUser.lastSeen
                 })
             };
-    
-            return mergedContact;
+
+            if (isExists) {
+                result.existing.push(mergedContact);
+            } else {
+                result.notExisting.push(mergedContact);
+            }
         });
-    
+
+        // Sort existing contacts alphabetically by userName
+        result.existing.sort((a, b) => {
+            if (a.userName && b.userName) {
+                return a.userName.localeCompare(b.userName);
+            } else if (a.userName) {
+                return -1;
+            } else if (b.userName) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+
         res.send({
             data: result,
             status: true
         });
     } catch (error) {
-        res.status(500).json({ status: false, error: error.message });
+        console.error('Error processing contacts:', error);
+        res.status(500).json({ status: false, error: "Internal server error. Please try again later." });
     }
 };
+
 
 const updateUser = async (req, res) => {
   const { mobile, userName, email, profileImage, fcmToken, password } = req.body;
