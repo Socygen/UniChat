@@ -75,6 +75,7 @@ const sendNotification = async (notificationData) => {
     let findUser = await UserModel.findById(notificationData?.senderId);
 
     if (!!findUser?.fcmToken) {
+        notificationData._id = notificationData?.chatId;
         let formdata = {
           to: findUser?.fcmToken,
           title: "New Message",
