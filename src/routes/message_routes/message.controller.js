@@ -102,7 +102,7 @@ const sendNotification = async (notificationData) => {
           body: notificationData?.text,
           data: {
           routeName: 'chatview', 
-          params:  JSON.parse(chatsString)
+          params: chats
         }};
 
         const raw = JSON.stringify(formdata);
