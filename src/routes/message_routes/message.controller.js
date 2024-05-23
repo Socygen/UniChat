@@ -77,26 +77,27 @@ const sendNotification = async (notificationData) => {
 
     if (!!findUser?.fcmToken) {
 
-         let chats = await ChatModel.find({ users: notificationData?.senderId })
-         .populate({
-         path: "users",
-         select: "userName email mobile online lastSeen profileImage"
-         })
-        .sort({ updatedAt: -1 });
- 
-       // Transform the array of chats into an object keyed by _id
-        chats = chats.reduce((acc, chat) => {
-         const users = chat.users;
-         const userIndex = users.findIndex(user => user._id.toString() === notificationData?.senderId);
-         if (userIndex !== -1 && userIndex !== 0) {
-           const temp = users[0];
-          users[0] = users[userIndex];
-          users[userIndex] = temp;
-       }
+          let chats = await ChatModel.find({ users: notificationData?.senderId })
+           .populate({
+              path: "users",
+              select: "userName email mobile online lastSeen profileImage"
+           }).sort({ updatedAt: -1 });
+
+            chats = chats.map(chat => {
+            const users = chat.users;
+            const userIndex = users.findIndex(user => user._id.toString() === notificationData?.senderId);
+            if (userIndex !== -1 && userIndex !== 0) {
+                const temp = users[0];
+                users[0] = users[userIndex];
+                users[userIndex] = temp;
+            }
+            return chat;
+         });
+
+        const chatsObject = chats.reduce((acc, chat) => {
          acc[chat._id] = chat;
          return acc;
-      }, {});
-
+        }, {});
         
         let formdata = {
           to: findUser?.fcmToken,
