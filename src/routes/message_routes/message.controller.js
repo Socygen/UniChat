@@ -79,6 +79,9 @@ const sendNotification = async (notificationData) => {
           to: findUser?.fcmToken,
           title: "New Message",
           body: notificationData?.text,
+          data: {
+          routeName: 'chatview', 
+          params: notificationData,
         };
 
         const raw = JSON.stringify(formdata);
