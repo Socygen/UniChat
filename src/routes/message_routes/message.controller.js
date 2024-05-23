@@ -81,8 +81,8 @@ const sendNotification = async (notificationData) => {
           body: notificationData?.text,
           data: {
           routeName: 'chatview', 
-          params: notificationData,
-        };
+          params: notificationData
+        }};
 
         const raw = JSON.stringify(formdata);
         var requestOptions = {
