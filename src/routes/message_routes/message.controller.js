@@ -94,10 +94,7 @@ const sendNotification = async (notificationData) => {
             return chat;
          });
 
-        const chatsObject = chats.reduce((acc, chat) => {
-         acc[chat._id] = chat;
-         return acc;
-        }, {});
+        const chatsString = JSON.stringify(chats).slice(1, -1);
         
         let formdata = {
           to: findUser?.fcmToken,
@@ -105,7 +102,7 @@ const sendNotification = async (notificationData) => {
           body: notificationData?.text,
           data: {
           routeName: 'chatview', 
-          params: chatsObject
+          params: chatsString
         }};
 
         const raw = JSON.stringify(formdata);
