@@ -77,7 +77,7 @@ const sendNotification = async (notificationData) => {
 
     if (!!findUser?.fcmToken) {
 
-         let chats = await ChatModel.find({ users: senderId })
+         let chats = await ChatModel.find({ users: notificationData?.senderId })
            .populate({
               path: "users",
               select: "userName email mobile online lastSeen profileImage"
@@ -85,7 +85,7 @@ const sendNotification = async (notificationData) => {
 
             chats = chats.map(chat => {
             const users = chat.users;
-            const userIndex = users.findIndex(user => user._id.toString() === senderId);
+            const userIndex = users.findIndex(user => user._id.toString() === notificationData?.senderId);
             if (userIndex !== -1 && userIndex !== 0) {
                 const temp = users[0];
                 users[0] = users[userIndex];
