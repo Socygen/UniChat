@@ -72,7 +72,7 @@ const sendMessage = async (req, res) => {
 
 const sendNotification = async (notificationData) => {
   try {
-    let findUser = await UserModel.findById(notificationData?.receiverId);
+    let findUser = await UserModel.findById(notificationData?.senderId);
 
     if (!!findUser?.fcmToken) {
         let formdata = {
