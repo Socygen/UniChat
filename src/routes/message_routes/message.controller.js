@@ -93,6 +93,10 @@ const sendNotification = async (notificationData) => {
             }
             return chat;
          });
+
+        const array = chats;
+        const [extractedItem] = array;
+       
     
         let formdata = {
           to: findUser?.fcmToken,
@@ -100,7 +104,7 @@ const sendNotification = async (notificationData) => {
           body: notificationData?.text,
           data: {
           routeName: 'chatview', 
-          params: chats
+          params: extractedItem
         }};
 
         const raw = JSON.stringify(formdata);
