@@ -1,6 +1,7 @@
 const UserModel = require('../../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 
 const createUser = async (req, res) => {
     const { mobile, userName, password, email, profileImage, fcmToken } = req.body;
@@ -140,20 +141,20 @@ const fetchExpoTokens = async (req, res) => {
 
 const checkContacts = async (req, res) => {
     try {
-        const contacts = req.body;
-    
+        const { body: contacts } = req;
+
         if (!contacts || !Array.isArray(contacts)) {
             return res.status(400).json({ status: false, error: "Invalid contacts format. Expected an array of contacts." });
         }
-    
+
         // Flatten and clean phone numbers
         const allPhoneNumbers = contacts.flatMap(contact => contact.phoneNumbers.map(phone => phone.number));
-        const cleanPhoneNumbers = allPhoneNumbers.map(phone => phone.replace(/^\+?91/, '').replace(/^91/, '').replace(/\D/g, ''));
-        
+        const cleanPhoneNumbers = allPhoneNumbers.map(phone => phone.replace(/^\+?91|^91|\D/g, ''));
+
         // Find existing users
         const existingUsers = await UserModel.find({ mobile: { $in: cleanPhoneNumbers } });
         const existingUserMap = new Map(existingUsers.map(user => [user.mobile.replace(/\D/g, ''), user]));
-    
+
         // Separate contacts into existing and non-existing
         const result = {
             existing: [],
@@ -161,12 +162,14 @@ const checkContacts = async (req, res) => {
         };
 
         contacts.forEach(contact => {
-            const cleanedContactPhoneNumbers = contact.phoneNumbers.map(phone => phone.number.replace(/^\+?91/, '').replace(/^91/, '').replace(/\D/g, ''));
+            const { displayName, phoneNumbers } = contact;
+            const cleanedContactPhoneNumbers = phoneNumbers.map(phone => phone.number.replace(/^\+?91|^91|\D/g, ''));
             const existingUser = cleanedContactPhoneNumbers.map(phone => existingUserMap.get(phone)).find(user => user);
             const isExists = !!existingUser;
 
             const mergedContact = {
-                displayName: contact.displayName,
+                id: uuidv4(),  // Unique ID for each contact
+                displayName,
                 phoneNumber: cleanedContactPhoneNumbers,
                 isExists,
                 ...(isExists && {
