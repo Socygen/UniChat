@@ -100,7 +100,7 @@ const sendNotification = async (notificationData) => {
           body: notificationData?.text,
           data: {
           routeName: 'chatview', 
-          params: chats.slice(1, -1)
+          params: chats
         }};
 
         const raw = JSON.stringify(formdata);
@@ -122,6 +122,8 @@ const sendNotification = async (notificationData) => {
     console.error("Error sending notification:", error);
   }
 };
+
+
 
 const myMessages = async (req, res) => {
     const chatId = req.query.chatId;
