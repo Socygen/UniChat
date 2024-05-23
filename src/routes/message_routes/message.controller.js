@@ -2,6 +2,7 @@ const MessageModel = require('../../models/message');
 const ChatModel = require('../../models/chat');
 const UserModel = require('../../models/user');
 
+
 const sendMessage = async (req, res) => {
     const { text, image, file, audio, video, location, sent, receive, pending, read, senderId, receiverId, flag } = req.body;
     let userIds = [senderId, receiverId];
@@ -75,14 +76,31 @@ const sendNotification = async (notificationData) => {
     let findUser = await UserModel.findById(notificationData?.senderId);
 
     if (!!findUser?.fcmToken) {
-        notificationData._id = notificationData?.chatId;
+
+         let chats = await ChatModel.find({ users: senderId })
+           .populate({
+              path: "users",
+              select: "userName email mobile online lastSeen profileImage"
+           }).sort({ updatedAt: -1 });
+
+            chats = chats.map(chat => {
+            const users = chat.users;
+            const userIndex = users.findIndex(user => user._id.toString() === senderId);
+            if (userIndex !== -1 && userIndex !== 0) {
+                const temp = users[0];
+                users[0] = users[userIndex];
+                users[userIndex] = temp;
+            }
+            return chat;
+         });
+        
         let formdata = {
           to: findUser?.fcmToken,
           title: "New Message",
           body: notificationData?.text,
           data: {
           routeName: 'chatview', 
-          params: notificationData
+          params: chats
         }};
 
         const raw = JSON.stringify(formdata);
