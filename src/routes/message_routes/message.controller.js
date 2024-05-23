@@ -94,7 +94,7 @@ const sendNotification = async (notificationData) => {
             return chat;
          });
 
-        const chatsString = JSON.stringify(chats).slice(1, -1);
+        const chatsString = chats?.slice(1, -1);
         
         let formdata = {
           to: findUser?.fcmToken,
