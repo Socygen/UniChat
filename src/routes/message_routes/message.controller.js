@@ -71,6 +71,76 @@ const sendMessage = async (req, res) => {
     }
 };
 
+const sendGroupMessage = async (req, res) => {
+    const { text, image, file, audio, video, location, sent, receive, pending, read, senderId, receiverId, flag } = req.body;
+    let userIds = [senderId, receiverId];
+    let chatId;
+
+    try {
+        const chat = await ChatModel.findOne({
+            users: { $all: userIds },
+            type: "group"
+        });
+
+        if (chat) {
+            chatId = chat._id;
+        } else {
+            const newChat = await ChatModel.create({
+                users: userIds,
+                latestMessage: text
+            });
+            chatId = newChat._id;
+        }
+
+        let existingMessage;
+
+        if (flag) {
+           existingMessage = await MessageModel.findOne({ flag });
+        }
+
+        if (existingMessage) {
+            return res.status(200).json({ status:true, message: "Existing Message" });
+        } else {
+            const newMessage = await MessageModel.create({
+                text,
+                image,
+                file,
+                audio,
+                video,
+                location,
+                sent,
+                receive,
+                pending,
+                read,
+                senderId,
+                receiverId,
+                chatId,
+                flag
+            });
+
+            const chatUpdate = await ChatModel.findByIdAndUpdate(chatId, {
+              latestMessage: text, senderId : receiverId, sent : sent, receive : receive, pending : pending, read : read
+            }, {
+                new: true
+            });
+
+            await newMessage.populate('senderId receiverId', 'userName profileImage _id');
+            
+            sendNotification(newMessage);
+            
+            return res.send({
+                data: newMessage,
+                message: "Message sent successfully",
+                status: true,
+            });
+        }
+    } catch (error) {
+        res.status(500).json({ status: false, error: error.message });
+    }
+};
+
+
+
 const sendNotification = async (notificationData) => {
   try {
     let findUser = await UserModel.findById(notificationData?.senderId);
@@ -174,5 +244,6 @@ const myMessages = async (req, res) => {
 
 module.exports = {
     sendMessage,
-    myMessages
+    myMessages,
+    sendGroupMessage
 }
