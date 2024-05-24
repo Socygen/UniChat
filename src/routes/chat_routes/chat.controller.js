@@ -37,18 +37,18 @@ const createGroupChat = async (req, res) => {
     let allUsers = userIds
     allUsers.push(req.query.userId)
     try {
-        const chat = await ChatModel.findOne({
-            users: { $all: allUsers },
-            type: "group"
-        })
-        if (chat) {
+       // const chat = await ChatModel.findOne({
+       //     users: { $all: allUsers },
+       //     type: "group"
+      //  })
+      //  if (chat) {
             
-            res.send({
-                data: chat,
-                status: true,
-            })
-            return;
-        }
+        //    res.send({
+          //      data: chat,
+          //      status: true,
+         //   })
+         //   return;
+       /// }
         const newChat = await ChatModel.create({
             users: userIds,
             chatName: chatName,
