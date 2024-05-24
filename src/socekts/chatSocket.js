@@ -53,10 +53,6 @@ module.exports = (io) => {
         socket.broadcast.emit('candidate', data);
     });
 
-    socket.on('calldisconnect', () => {
-        console.log('A user disconnected');
-    });
-    
 
     socket.on('user_online', async ({ userId }) => {
       try {
