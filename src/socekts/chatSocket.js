@@ -40,6 +40,24 @@ module.exports = (io) => {
       console.log("Emitted To Receiver", data);
     })
 
+
+    socket.on('offer', (data) => {
+        socket.broadcast.emit('offer', data);
+    });
+
+    socket.on('answer', (data) => {
+        socket.broadcast.emit('answer', data);
+    });
+
+    socket.on('candidate', (data) => {
+        socket.broadcast.emit('candidate', data);
+    });
+
+    socket.on('calldisconnect', () => {
+        console.log('A user disconnected');
+    });
+    
+
     socket.on('user_online', async ({ userId }) => {
       try {
         const user = await UserModel.findById(userId);
