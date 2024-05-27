@@ -8,7 +8,8 @@ router.post('/createPrivateChat',auth, chat_controller.createPrivateChat);
 router.post('/createGroupChat',auth, chat_controller.createGroupChat);
 router.post('/myChats',auth, chat_controller.myChats);
 router.get('/chatById',auth, chat_controller.chatById);
-router.post('/removegroupUser', chat_controller.removeUsersFromGroupChat);
-router.post('/addUsersToGroupChat', chat_controller.addUsersToGroupChat);
+router.post('/removegroupUser',auth, chat_controller.removeUsersFromGroupChat);
+router.post('/addUsersToGroupChat',auth , chat_controller.addUsersToGroupChat);
+router.post('/updateGroupChat',auth, chat_controller.updateGroupChat);
 
 module.exports = router
