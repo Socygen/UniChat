@@ -3,6 +3,7 @@ const {ObjectId} = mongoose.Schema.Types
 
 const chatSchema = new mongoose.Schema({
 chatName: {type: String},
+groupIcon: {type: String},
 type: {
     type: String,
     enum: ["private","group"],
