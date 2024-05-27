@@ -40,7 +40,7 @@ module.exports = (io) => {
       console.log("Emitted To Receiver", data);
     })
 
-     socket.on('group_message', (data) => {
+    socket.on('group_message', (data) => {
       io.to(data.chatId).emit("group_message", data);
       console.log("Emitted To Group", data);
     })
