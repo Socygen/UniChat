@@ -4,35 +4,11 @@ const UserModel = require('../../models/user');
 
 
 const sendMessage = async (req, res) => {
-    const { text, image, file, audio, video, location, sent, receive, pending, read, senderId, receiverId, flag } = req.body;
+    const { text, image, file, audio, video, chatId, location, sent, receive, pending, read, senderId, receiverId, flag } = req.body;
     let userIds = [senderId, receiverId];
     let chatId;
 
     try {
-        const chat = await ChatModel.findOne({
-            users: { $all: userIds },
-            type: "private"
-        });
-
-        if (chat) {
-            chatId = chat._id;
-        } else {
-            const newChat = await ChatModel.create({
-                users: userIds,
-                latestMessage: text
-            });
-            chatId = newChat._id;
-        }
-
-        let existingMessage;
-
-        if (flag) {
-           existingMessage = await MessageModel.findOne({ flag });
-        }
-
-        if (existingMessage) {
-            return res.status(200).json({ status:true, message: "Existing Message" });
-        } else {
             const newMessage = await MessageModel.create({
                 text,
                 image,
