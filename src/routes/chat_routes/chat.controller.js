@@ -33,13 +33,14 @@ const createPrivateChat = async (req, res) => {
 }
 
 const createGroupChat = async (req, res) => {
-    const { userIds, chatName } = req.body
+    const { userIds, chatName, groupIcon } = req.body
     let allUsers = userIds
     allUsers.push(req.query.userId)
     try {
         const newChat = await ChatModel.create({
             users: userIds,
             chatName: chatName,
+            groupIcon : groupIcon,
             type: "group",
             groupAdmin: req.query.userId
         })
