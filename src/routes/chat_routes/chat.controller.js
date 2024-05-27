@@ -127,6 +127,40 @@ const addUsersToGroupChat = async (req, res) => {
     }
 };
 
+const updateGroupChat = async (req, res) => {
+    const { chatId, chatName, groupIcon } = req.body;
+    const userId = req.query.userId;
+
+    try {
+        const chat = await ChatModel.findById(chatId);
+
+        if (!chat) {
+            return res.status(404).json({ status: false, error: "Chat not found" });
+        }
+
+        if (chat.groupAdmin.toString() !== userId) {
+            return res.status(403).json({ status: false, error: "Only the group admin can update the group chat" });
+        }
+
+        if (chatName) {
+            chat.chatName = chatName;
+        }
+
+        if (groupIcon) {
+            chat.groupIcon = groupIcon;
+        }
+
+        await chat.save();
+
+        return res.json({
+            data: chat,
+            status: true
+        });
+    } catch (error) {
+        console.error('Error updating group chat:', error);
+        return res.status(500).json({ status: false, error: "An unexpected error occurred" });
+    }
+};
 
 
 const myChats = async (req, res) => {
@@ -181,5 +215,6 @@ module.exports = {
     myChats,
     chatById,
     removeUsersFromGroupChat,
-    addUsersToGroupChat
+    addUsersToGroupChat,
+    updateGroupChat
 }
