@@ -88,6 +88,46 @@ const removeUsersFromGroupChat = async (req, res) => {
 };
 
 
+const addUsersToGroupChat = async (req, res) => {
+    const { chatId, userIds } = req.body;
+    const userId = req.query.userId;
+
+    if (!Array.isArray(userIds)) {
+        return res.status(400).json({ status: false, error: "userIds must be an array" });
+    }
+
+    try {
+        const chat = await ChatModel.findById(chatId);
+
+        if (!chat) {
+            return res.status(404).json({ status: false, error: "Chat not found" });
+        }
+
+        if (chat.groupAdmin.toString() !== userId) {
+            return res.status(403).json({ status: false, error: "Only the group admin can add users" });
+        }
+
+        const uniqueUserIds = [...new Set(userIds)];
+        const usersToAdd = uniqueUserIds.filter(id => id !== chat.groupAdmin.toString());
+
+        if (usersToAdd.length === 0) {
+            return res.status(400).json({ status: false, error: "No valid users to add" });
+        }
+
+        chat.users = [...new Set([...chat.users.map(user => user.toString()), ...usersToAdd])];
+        await chat.save();
+
+        return res.json({
+            data: chat,
+            status: true
+        });
+    } catch (error) {
+        console.error('Error adding users to group chat:', error);
+        return res.status(500).json({ status: false, error: "An unexpected error occurred" });
+    }
+};
+
+
 
 const myChats = async (req, res) => {
     try {
@@ -140,5 +180,6 @@ module.exports = {
     createGroupChat,
     myChats,
     chatById,
-    removeUsersFromGroupChat
+    removeUsersFromGroupChat,
+    addUsersToGroupChat
 }
