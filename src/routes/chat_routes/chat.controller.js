@@ -37,18 +37,6 @@ const createGroupChat = async (req, res) => {
     let allUsers = userIds
     allUsers.push(req.query.userId)
     try {
-       // const chat = await ChatModel.findOne({
-       //     users: { $all: allUsers },
-       //     type: "group"
-      //  })
-      //  if (chat) {
-            
-        //    res.send({
-          //      data: chat,
-          //      status: true,
-         //   })
-         //   return;
-       /// }
         const newChat = await ChatModel.create({
             users: userIds,
             chatName: chatName,
@@ -63,6 +51,42 @@ const createGroupChat = async (req, res) => {
         res.status(403).json({ status: false, error: error })
     }
 }
+
+const removeUsersFromGroupChat = async (req, res) => {
+    const { chatId, userIds } = req.body;
+    const userId = req.query.userId;
+
+    if (!Array.isArray(userIds)) {
+        return res.status(400).json({ status: false, error: "userIds must be an array" });
+    }
+
+    try {
+        const chat = await ChatModel.findById(chatId);
+        
+        if (!chat) {
+            return res.status(404).json({ status: false, error: "Chat not found" });
+        }
+
+        if (chat.groupAdmin.toString() !== userId) {
+            return res.status(403).json({ status: false, error: "Only the group admin can remove users" });
+        }
+
+        const userIdsToRemove = userIds.filter(id => id !== chat.groupAdmin.toString());
+
+        chat.users = chat.users.filter(user => !userIdsToRemove.includes(user.toString()));
+        await chat.save();
+
+        return res.send({
+            data: chat,
+            status: true
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: false, error: error.message });
+    }
+};
+
+
 
 const myChats = async (req, res) => {
     try {
@@ -114,5 +138,6 @@ module.exports = {
     createPrivateChat,
     createGroupChat,
     myChats,
-    chatById
+    chatById,
+    removeUsersFromGroupChat
 }
