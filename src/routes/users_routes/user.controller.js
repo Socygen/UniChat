@@ -147,50 +147,71 @@ const checkContacts = async (req, res) => {
             return res.status(400).json({ status: false, error: "Invalid contacts format. Expected an array of contacts." });
         }
 
-        // Flatten and clean phone numbers
-        const allPhoneNumbers = contacts.flatMap(contact => contact.phoneNumbers.map(phone => phone.number));
-        const cleanPhoneNumbers = allPhoneNumbers.map(phone => phone.replace(/^\+?91|^91|\D/g, ''));
+        // Validate a single contact
+        const isValidContact = (contact) => {
+            return contact && typeof contact.displayName === 'string' && Array.isArray(contact.phoneNumbers) &&
+                contact.phoneNumbers.every(phone => {
+                    const cleanedNumber = phone.number.replace(/^\+?91|^91|\D/g, '');
+                    return typeof phone.number === 'string' && cleanedNumber.length === 10;
+                });
+        };
 
-        // Find existing users
-        const existingUsers = await UserModel.find({ mobile: { $in: cleanPhoneNumbers } });
-        const existingUserMap = new Map(existingUsers.map(user => [user.mobile.replace(/\D/g, ''), user]));
+        // Batch size for processing contacts
+        const batchSize = 500;
 
-        // Separate contacts into existing and non-existing
-        const result = {
+        // Function to process a batch of contacts
+        const processBatch = async (batchContacts) => {
+            const batchPhoneNumbers = batchContacts.flatMap(contact => contact.phoneNumbers.map(phone => phone.number.replace(/^\+?91|^91|\D/g, '')));
+            const existingUsers = await UserModel.find({ mobile: { $in: batchPhoneNumbers } });
+            const existingUserMap = new Map(existingUsers.map(user => [user.mobile.replace(/\D/g, ''), user]));
+
+            return batchContacts.map(contact => {
+                const { displayName, phoneNumbers } = contact;
+                const cleanedContactPhoneNumbers = phoneNumbers.map(phone => phone.number.replace(/^\+?91|^91|\D/g, ''));
+                const existingUser = cleanedContactPhoneNumbers.map(phone => existingUserMap.get(phone)).find(user => user);
+                const isExists = !!existingUser;
+
+                return {
+                    id: uuidv4(),  // Unique ID for each contact
+                    displayName,
+                    phoneNumber: cleanedContactPhoneNumbers,
+                    isExists,
+                    ...(isExists && {
+                        _id: existingUser._id,
+                        profileImage: existingUser.profileImage,
+                        userName: existingUser.userName,
+                        mobile: existingUser.mobile,
+                        online: existingUser.online,
+                        lastSeen: existingUser.lastSeen
+                    })
+                };
+            });
+        };
+
+        let result = {
             existing: [],
             notExisting: []
         };
 
-        contacts.forEach(contact => {
-            const { displayName, phoneNumbers } = contact;
-            const cleanedContactPhoneNumbers = phoneNumbers.map(phone => phone.number.replace(/^\+?91|^91|\D/g, ''));
-            const existingUser = cleanedContactPhoneNumbers.map(phone => existingUserMap.get(phone)).find(user => user);
-            const isExists = !!existingUser;
+        // Filter valid contacts before processing
+        const validContacts = contacts.filter(isValidContact);
 
-            const mergedContact = {
-                id: uuidv4(),  // Unique ID for each contact
-                displayName,
-                phoneNumber: cleanedContactPhoneNumbers,
-                isExists,
-                ...(isExists && {
-                    _id: existingUser._id,
-                    profileImage: existingUser.profileImage,
-                    userName: existingUser.userName,
-                    mobile: existingUser.mobile,
-                    online: existingUser.online,
-                    lastSeen: existingUser.lastSeen
-                })
-            };
+        for (let i = 0; i < validContacts.length; i += batchSize) {
+            const batchContacts = validContacts.slice(i, i + batchSize);
+            const processedBatch = await processBatch(batchContacts);
 
-            if (isExists) {
-                result.existing.push(mergedContact);
-            } else {
-                result.notExisting.push(mergedContact);
-            }
-        });
+            processedBatch.forEach(contact => {
+                if (contact.isExists) {
+                    result.existing.push(contact);
+                } else {
+                    result.notExisting.push(contact);
+                }
+            });
+        }
 
         // Sort existing and notExisting contacts alphabetically by displayName
         const sortByDisplayName = (a, b) => {
+
             if (a.displayName && b.displayName) {
                 return a.displayName.localeCompare(b.displayName);
             } else if (a.displayName) {
@@ -214,7 +235,6 @@ const checkContacts = async (req, res) => {
         res.status(500).json({ status: false, error: "Internal server error. Please try again later." });
     }
 };
-
 
 const updateUser = async (req, res) => {
   const { mobile, userName, email, profileImage, fcmToken, password } = req.body;
