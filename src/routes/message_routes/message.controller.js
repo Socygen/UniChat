@@ -152,7 +152,7 @@ const sendNotification = async (notificationData) => {
       
           let formdata = {
             to: findUser?.fcmToken,
-            title: "New Message",
+            title: findUser?.userName,
             body: notificationData?.text,
             data: {
             routeName: 'chatview', 
