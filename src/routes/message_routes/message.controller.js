@@ -126,7 +126,7 @@ const sendGroupMessage = async (req, res) => {
 const sendNotification = async (notificationData) => {
     try {
       let findUser = await UserModel.findById(notificationData?.senderId);
-      let anotherUser = await UserModel.findById(notificationData?.senderId);
+      let anotherUser = await UserModel.findById(notificationData?.receiverId);
   
       if (!!findUser?.fcmToken) {
   
