@@ -126,6 +126,7 @@ const sendGroupMessage = async (req, res) => {
 const sendNotification = async (notificationData) => {
     try {
       let findUser = await UserModel.findById(notificationData?.senderId);
+      let anotherUser = await UserModel.findById(notificationData?.receiverId);
   
       if (!!findUser?.fcmToken) {
   
@@ -152,7 +153,7 @@ const sendNotification = async (notificationData) => {
       
           let formdata = {
             to: findUser?.fcmToken,
-            title: findUser?.userName,
+            title: anotherUser?.userName,
             body: notificationData?.text,
             data: {
             routeName: 'chatview', 
